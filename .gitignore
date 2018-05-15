@@ -1,0 +1,13 @@
+# IDE files.
+.idea
+.ipynb_checkpoints
+scripts/__pycache__/
+
+# Tensorflow data
+scripts/checkpoint
+scripts/lenet.data-*
+scripts/lenet.index
+scripts/lenet.meta
+
+# Dataset
+dataset/
