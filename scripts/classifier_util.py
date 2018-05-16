@@ -95,4 +95,5 @@ def preprocess_images(X):
   """
   X_gray = convert_to_grayscale(X)
   # return min_max_scale_grayscale_images(X_gray)
-  return quick_normalize_images(X_gray)
+  # return quick_normalize_images(X_gray)
+  return normalize_images(X_gray)
