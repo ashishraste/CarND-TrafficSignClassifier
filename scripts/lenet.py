@@ -9,11 +9,10 @@ def maxpool2d(x, k=2):
   x = tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='VALID')
   return x
 
-def build_lenet(x):
+def build_lenet(x, keep_prob=0.5):
   # Arguments used for tf.truncated_normal, randomly defines variables for the weights and biases for each layer
   mu = 0
   sigma = 0.1
-  dropout = 0.75
 
   weights = {
     'fw1': tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=mu, stddev=sigma)),
@@ -58,12 +57,17 @@ def build_lenet(x):
   # Activation.
   conv3 = tf.nn.relu(conv3)
 
+  # Dropout.
+  conv3 = tf.nn.dropout(conv3, keep_prob)
+
   # Layer 4: Fully Connected. Input = 120. Output = 84.
   conv4 = tf.add(tf.matmul(conv3, weights['fcw2']), biases['fcb2'])
 
   # Activation.
   conv4 = tf.nn.relu(conv4)
-  #     conv4 = tf.nn.dropout(conv4, dropout)
+
+  # Dropout.
+  conv4 = tf.nn.dropout(conv4, keep_prob)
 
   # Layer 5: Fully Connected. Input = 84. Output = 43.
   logits = tf.add(tf.matmul(conv4, weights['fcw3']), biases['fcb3'])

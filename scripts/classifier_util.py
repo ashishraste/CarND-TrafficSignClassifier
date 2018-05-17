@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 import seaborn as sns
 import numpy as np
+import cv2
 
 def print_dataset_summary(X_train, X_valid, X_test, y_train):
   print("Image dimensions: {}".format(X_train[0].shape))
@@ -94,6 +95,45 @@ def preprocess_images(X):
   :return: Preprocessed image dataset.
   """
   X_gray = convert_to_grayscale(X)
-  # return min_max_scale_grayscale_images(X_gray)
-  # return quick_normalize_images(X_gray)
   return normalize_images(X_gray)
+
+def random_translate(img, trans_range=3):
+  """
+  Translates the image in both x and y directions.
+  Range for pixel-translation is set to -2 to 2.
+  :param img: Input image.
+  :param trans_range: Range, in pixels, to translate the image by.
+  :return: Translated image.
+  """
+  height,width = img.shape[:2]
+  dx = dy = np.random.uniform(trans_range) - trans_range/2
+  translation_mat = np.float32([[1,0,dx],[0,1,dy]])
+  return cv2.warpAffine(img, translation_mat, (height,width))
+
+def random_shear(img, shear_range=10):
+  """
+  Shears the image (stretch or shrink) by defining a pair of three points.
+  :param img: Input image.
+  :param shear_range: Amount of shearing, in pixels, to be applied on the image.
+  :return: Sheared image.
+  """
+  height,width = img.shape[:2]
+  # Defining shear limits with a pair of 3-points.
+  px = 5 + shear_range * np.random.uniform() - shear_range / 2
+  py = 20 + shear_range * np.random.uniform() - shear_range / 2
+  shear_src = np.float32([[5,5],[20,5],[5,20]])
+  shear_dst = np.float32([[px,5],[py,px],[5,py]])
+  shear_mat = cv2.getAffineTransform(shear_src, shear_dst)
+  return cv2.warpAffine(img, shear_mat, (height,width))
+
+def random_rotate(img, angle_range=20):
+  """
+  Rotates the image by a certain angle.
+  :param img: Input image.
+  :param angle_range: Range of the angle of rotation, in pixels.
+  :return: Rotated image.
+  """
+  height,width = img.shape[:2]
+  rot_angle = np.random.uniform(angle_range) - angle_range / 2
+  rot_mat = cv2.getRotationMatrix2D((height/2,width/2), rot_angle, 1)
+  return cv2.warpAffine(img, rot_mat, (height,width))
