@@ -19,6 +19,9 @@ with open(validation_file, mode='rb') as f:
 with open(testing_file, mode='rb') as f:
   test = pickle.load(f)
 
+# X_train, y_train = train['features'], train['labels']
+# with open('augmented_train.p', mode='rb') as f:
+#   augmented_train = pickle.load(f)
 X_train, y_train = train['features'], train['labels']
 X_valid, y_valid = valid['features'], valid['labels']
 X_test, y_test = test['features'], test['labels']
@@ -33,21 +36,21 @@ n_classes = len(np.unique(y_train))
 
 # Stores list of traffic-sign-names, indexed by their ID as given in the dataset.
 sign_names = util.load_sign_names()
+
 # util.visualize_dataset(X_train, y_train, sign_names)
 # util.describe_labels(y_train, sign_names, 'Training set labels')
 # util.describe_labels(y_valid, sign_names, 'Validation set labels')
 # util.describe_labels(y_test, sign_names, 'Test set labels')
 
-### TODO: Augment the classes with images where number of images is below a certain count.
-
-
 ### Preprocess data.
+# X_train, y_train = util.augment_jitter_data(X_train, y_train, 850)
+with open('augmented_train.p', mode='rb') as f:
+  augmented_train = pickle.load(f)
+X_train, y_train = augmented_train['features'], augmented_train['labels']
+# util.describe_labels(y_train, sign_names,'Augmented training samples')
 X_train = util.preprocess_images(X_train)
 X_valid = util.preprocess_images(X_valid)
 X_test = util.preprocess_images(X_test)
-
-### Shuffle training data.
-X_train, y_train = shuffle(X_train, y_train)
 
 ### Hyper parameters.
 learning_rate = 0.001
@@ -81,29 +84,60 @@ def evaluate(X_data, y_data):
     total_accuracy += (accuracy * len(batch_x))
   return total_accuracy / num_examples
 
-if __name__ == '__main__':
-  ### Training routine.
+def predict(image, model):
   with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    num_examples = len(X_train)
+    saver.restore(sess, './' + model)
+    prediction = tf.argmax(logits, 1)
+    return prediction.eval(feed_dict={x: image[np.newaxis, :, :, :], keep_prob: 1.0})
 
-    print("Training...")
-    print()
-    for i in range(EPOCHS):
-      X_train, y_train = shuffle(X_train, y_train)
-      for offset in range(0, num_examples, BATCH_SIZE):
-        end = offset + BATCH_SIZE
-        batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-        sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+def print_top_k_softmax(test_image, model, k=5):
+  with tf.Session() as sess:
+    saver.restore(sess, './' + model)
+    # Softmax predictions on this test-image.
+    softmax = sess.run(tf.nn.softmax(logits), feed_dict={x: test_image[np.newaxis, :, :, :], keep_prob: 1.0})
+    # Return top-k softmax probabilities predicted on this test-image.
+    return sess.run(tf.nn.top_k(softmax, k))
 
-      validation_accuracy = evaluate(X_valid, y_valid)
-      print("EPOCH {} ...".format(i + 1))
-      print("Validation Accuracy = {:.3f}".format(validation_accuracy))
-      print()
+def print_softmax_predictions(pred):
+  '''
+  Prints softmax-predictions in ascending order, with the class-label having highest probability on top.
+  '''
+  # Index 0 has tuple of probabilities.
+  # Index 1 has tuple of class-label indices.
+  for i in range(len(pred[0][0])):
+    print('{} : {:.3f}%'.format(sign_names[pred[1][0][i]], pred[0][0][i] * 100))
 
-    saver.save(sess, './lenet')
-    print("Model saved")
+### Training routine.
+# with tf.Session() as sess:
+#   sess.run(tf.global_variables_initializer())
+#   num_examples = len(X_train)
+#   print("Training...")
+#   print()
+#   for i in range(EPOCHS):
+#     X_train, y_train = shuffle(X_train, y_train)
+#     for offset in range(0, num_examples, BATCH_SIZE):
+#       end = offset + BATCH_SIZE
+#       batch_x, batch_y = X_train[offset:end], y_train[offset:end]
+#       sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+#
+#     validation_accuracy = evaluate(X_valid, y_valid)
+#     print("EPOCH {} ...".format(i + 1))
+#     print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+#     print()
+#
+#   saver.save(sess, './lenet')
+#   print("Model saved")
 
+### Testing routine.
+# with tf.Session() as sess:
+#   saver.restore(sess, './lenet')
+#   test_accuracy = sess.run(accuracy_operation, feed_dict={x: X_test, y: y_test, keep_prob: 1.0})
+#   print('Test accuracy {}'.format(test_accuracy))
+
+### Test images.
+test_images, test_images_scaled = util.load_test_images()
+print(len(test_images), len(test_images_scaled))
+test_images = util.preprocess_images(test_images)
 
 
 

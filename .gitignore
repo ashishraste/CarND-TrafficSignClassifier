@@ -6,8 +6,8 @@ scripts/__pycache__/
 # Tensorflow data
 scripts/checkpoint
 scripts/lenet.data-*
-scripts/lenet.index
-scripts/lenet.meta
+scripts/*.p
+
 
 # Dataset
 dataset/

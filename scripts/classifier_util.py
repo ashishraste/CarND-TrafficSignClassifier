@@ -4,6 +4,10 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import cv2
+import pickle
+from tqdm import tqdm
+from time import sleep
+import glob
 
 def print_dataset_summary(X_train, X_valid, X_test, y_train):
   print("Image dimensions: {}".format(X_train[0].shape))
@@ -44,6 +48,7 @@ def visualize_dataset(X, y, sign_names, img_width=32, img_height=32):
     ax = fig.add_subplot(rows, columns, i)
     ax.title.set_text(sign_names[y[img_idx]])
     ax.title.set_fontsize(30)
+    plt.axis('off')
     plt.imshow(sign_image)
   plt.show()
 
@@ -58,9 +63,9 @@ def describe_labels(y, sign_names, count_plot_name=None):
   cnt_plot.set_xlabels('Traffic sign class')
   cnt_plot.fig.suptitle(count_plot_name, size=24)
   plt.show()
-  print('### Label index (vs) Sign name map ###')
-  print(pd.DataFrame(list(sign_dict.values()), columns=['Sign Name']))
-  print('\n')
+  # print('### Label index (vs) Sign name map ###')
+  # print(pd.DataFrame(list(sign_dict.values()), columns=['Sign Name']))
+  # print('\n')
   print('### Sign counts ###')
   print(y_df['sign_name'].value_counts())
 
@@ -137,3 +142,46 @@ def random_rotate(img, angle_range=20):
   rot_angle = np.random.uniform(angle_range) - angle_range / 2
   rot_mat = cv2.getRotationMatrix2D((height/2,width/2), rot_angle, 1)
   return cv2.warpAffine(img, rot_mat, (height,width))
+
+def random_brightness(img):
+  r_brightness = 0.3 + np.random.uniform()
+  img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+  img_hsv[:,:,2] = r_brightness * img_hsv[:,:,2]
+  return cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
+
+def augment_jitter_data(X, y, min_num_samples=750):
+  num_classes = len(np.unique(y))
+  print('Augmenting data for classes which have < {} samples'.format(min_num_samples))
+  augmented_train_set = {}
+  for sample_class in range(num_classes):
+    sample_indices = np.where(sample_class == y)
+    num_samples = len(sample_indices[0])
+    if num_samples < min_num_samples:
+      print('\nClass {}: {} samples, {} samples to augment'.format(sample_class, num_samples, min_num_samples-num_samples))
+      sleep(0.1)
+      # Augment samples for this class by applying geometric transformation on existing images having the same class.
+      for i in tqdm(range(min_num_samples - num_samples)):
+        img = X[sample_indices[0][i % num_samples]]
+        transformed_img = random_shear(random_translate(random_rotate(random_brightness(img))))
+        X = np.concatenate((X, [transformed_img]), axis=0)
+        y = np.concatenate((y, [sample_class]), axis=0)
+      sleep(0.5)
+  augmented_train_set['features'] = X
+  augmented_train_set['labels'] = y
+  pickle.dump(augmented_train_set, open('augmented_train.pickle','wb'))
+  return X, y
+
+def load_test_images(dirpath='../dataset/test_images'):
+  test_images = []
+  test_images_scaled = []
+  fig, ax = plt.subplots(2, 4, figsize=(4,2))
+  ax = ax.ravel()
+  for i, img in enumerate(glob.glob(dirpath+'/*.jpg')):
+    image = cv2.imread(img)
+    plt.axis('off')
+    ax[i].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    test_images.append(image)
+    test_images_scaled.append(cv2.resize(image, (32,32)))
+  plt.show()
+  return np.asarray(test_images), np.asarray(test_images_scaled)
+
