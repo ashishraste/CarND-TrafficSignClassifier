@@ -23,4 +23,7 @@ during the course of the project.
 
 5. signnames.csv : Mapping of German traffic road signs and their class-labels.
 
+6. scripts : Scripts containing classes and methods that were written during
+the development stage.
+
 ---
