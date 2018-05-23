@@ -899,18 +899,13 @@ def build_lenet3(x, keep_prob=0.5):
   * Adam optimizer was used to optimize the cost-function. Details on why it is used instead of traditional
     Stochastic Gradient Descent is bit hazy, something to read-up in the next few days.
     
-  * **Traditional LeNet architecture with dropouts** applied on fully-connected layers is used as the final-model. 
-    The other two variants didn't perform well compared to this model.
-    
   * It took good amount of time to fine-tune the hyperparameters, not with respect to their range of values
     but with the amount of time it takes to tune them back and forth after observing the validation accuracies.
-    With Adam optimizer, the range of values to be tuned tends to be minimal. Following hyperparameters produced the 
-    best result with the chosen architecture.
+    With Adam optimizer, the range of values to be tuned tends to be minimal. Related comment on potential
+    improvement is given in *Reflections* section below.
     
-    1. Learning rate : 0.0009
-    2. Number of epochs : 75
-    3. Batch size : 128
-
+  * Traditional LeNet architecture with dropouts applied on fully-connected layers is used as the model. 
+    The other two variants didn't perform well compared to this model.
 
 
 ```python
